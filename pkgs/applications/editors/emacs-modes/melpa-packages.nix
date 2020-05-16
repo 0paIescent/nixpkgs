@@ -85,6 +85,8 @@ instantenous and formats commits for you.
           inherit (self.melpaPackages) easy-kill;
         };
 
+        dune = dontConfigure super.dune;
+
         emacsql-sqlite = super.emacsql-sqlite.overrideAttrs(old: {
           buildInputs = old.buildInputs ++ [ pkgs.sqlite ];
 
@@ -125,6 +127,12 @@ instantenous and formats commits for you.
         ess-R-data-view = super.ess-R-data-view.override {
           inherit (self.melpaPackages) ess ctable popup;
         };
+
+        forge = super.forge.overrideAttrs (attrs: {
+          # searches for Git at build time
+          nativeBuildInputs =
+            (attrs.nativeBuildInputs or []) ++ [ external.git ];
+        });
 
         flycheck-rtags = fix-rtags super.flycheck-rtags;
 
@@ -308,6 +316,8 @@ instantenous and formats commits for you.
 
         rtags = dontConfigure (externalSrc super.rtags external.rtags);
 
+        rtags-xref = dontConfigure super.rtags;
+
         shm = super.shm.overrideAttrs (attrs: {
           propagatedUserEnvPkgs = [ external.structured-haskell-mode ];
         });
@@ -326,6 +336,12 @@ instantenous and formats commits for you.
             mkdir -p $out/bin
             install -m755 -Dt $out/bin ./source/server/telega-server
           '';
+        });
+
+        treemacs-magit = super.treemacs-magit.overrideAttrs (attrs: {
+          # searches for Git at build time
+          nativeBuildInputs =
+            (attrs.nativeBuildInputs or []) ++ [ external.git ];
         });
 
         vdiff-magit = super.vdiff-magit.overrideAttrs (attrs: {
@@ -439,12 +455,6 @@ instantenous and formats commits for you.
             (attrs.nativeBuildInputs or []) ++ [ external.git ];
         });
 
-        forge = super.forge.overrideAttrs (attrs: {
-          # searches for Git at build time
-          nativeBuildInputs =
-            (attrs.nativeBuildInputs or []) ++ [ external.git ];
-        });
-
         gerrit = super.gerrit.overrideAttrs (attrs: {
           nativeBuildInputs =
             (attrs.nativeBuildInputs or []) ++ [ external.git ];
@@ -537,12 +547,6 @@ instantenous and formats commits for you.
         spaceline = super.spaceline.override {
           inherit (self.melpaPackages) powerline;
         };
-
-        treemacs-magit = super.treemacs-magit.overrideAttrs (attrs: {
-          # searches for Git at build time
-          nativeBuildInputs =
-            (attrs.nativeBuildInputs or []) ++ [ external.git ];
-        });
 
         vterm = super.vterm.overrideAttrs(old: {
           buildInputs = old.buildInputs ++ [ self.emacs pkgs.cmake pkgs.libvterm-neovim ];

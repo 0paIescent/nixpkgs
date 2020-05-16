@@ -1,4 +1,4 @@
-{ stdenv, lib, makeWrapper
+{ stdenv, lib, makeWrapper, symlinkJoin
 , vimUtils
 , bundlerEnv, ruby
 , nodejs
@@ -56,14 +56,17 @@ let
   binPath = makeBinPath (optionals withRuby [rubyEnv] ++ optionals withNodeJs [nodejs]);
 
   in
-  stdenv.mkDerivation {
+  symlinkJoin {
       name = "neovim-${stdenv.lib.getVersion neovim}";
-      buildCommand = let bin="${neovim}/bin/nvim"; in ''
+      paths = [neovim];
+      postBuild = let bin="${neovim}/bin/nvim"; in ''
         if [ ! -x "${bin}" ]
         then
             echo "cannot find executable file \`${bin}'"
             exit 1
         fi
+
+        rm -f $out/bin/nvim
 
         makeWrapper "$(readlink -v --canonicalize-existing "${bin}")" \
           "$out/bin/nvim" --add-flags " \
@@ -73,16 +76,10 @@ let
         --cmd \"${if withRuby then "let g:ruby_host_prog='$out/bin/nvim-ruby'" else "let g:loaded_ruby_provider=1"}\" " \
         --suffix PATH : ${binPath} \
         ${optionalString withRuby '' --set GEM_HOME ${rubyEnv}/${rubyEnv.ruby.gemPath}'' }
-
-        # expose the manpage from neovim-unwrapped
-        mkdir -p $out/share/man/man1
-        ln -s ${neovim}/share/man/man1/nvim.1.gz $out/share/man/man1/nvim.1.gz
       ''
       + optionalString (!stdenv.isDarwin) ''
         # copy icon and patch the original neovim.desktop file
-        mkdir -p $out/share/{applications,pixmaps}
-        ln -s ${neovim}/share/pixmaps/nvim.png $out/share/pixmaps/nvim.png
-        substitute ${neovim}/share/applications/nvim.desktop $out/share/applications/nvim.desktop \
+        substituteInPlace $out/share/applications/nvim.desktop \
           --replace 'TryExec=nvim' "TryExec=$out/bin/nvim" \
           --replace 'Name=Neovim' 'Name=WrappedNeovim'
       ''
